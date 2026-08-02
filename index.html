@@ -229,7 +229,6 @@ h1,h2,h3{ font-family: var(--font-display); font-weight:600; color: var(--emeral
   <div class="container chapter-grid">
     <div class="chapter-visual reveal" style="padding:0;">
       <video id="aboutVideo" src="about-video.mp4" autoplay muted loop playsinline style="width:100%; height:100%; object-fit:cover; border-radius: inherit;"></video>
-      <button id="unmuteBtn" aria-label="Toggle sound" style="position:absolute; bottom:16px; right:16px; width:44px; height:44px; border-radius:50%; background:rgba(255,255,255,0.15); backdrop-filter:blur(6px); border:1px solid rgba(230,205,156,0.5); color:var(--gold-soft); font-size:1.1rem; cursor:pointer;">🔇</button>
     </div>
     <div class="chapter-copy reveal">
       <span class="eyebrow">Chapter One</span>
@@ -465,14 +464,17 @@ form.addEventListener('submit', async (e) => {
   }
 });
 
-// about video sound toggle
+// about video — auto-unmute on the very first interaction anywhere on
+// the page (click, tap, key, or scroll), since browsers block audio
+// from starting on page load with no interaction at all
 const aboutVideo = document.getElementById('aboutVideo');
-const unmuteBtn = document.getElementById('unmuteBtn');
-if (aboutVideo && unmuteBtn){
-  unmuteBtn.addEventListener('click', () => {
-    aboutVideo.muted = !aboutVideo.muted;
-    unmuteBtn.textContent = aboutVideo.muted ? '🔇' : '🔊';
-  });
+if (aboutVideo){
+  const unmuteOnce = () => {
+    aboutVideo.muted = false;
+    aboutVideo.play().catch(() => {});
+    ['click','touchstart','keydown','scroll'].forEach(ev => document.removeEventListener(ev, unmuteOnce));
+  };
+  ['click','touchstart','keydown','scroll'].forEach(ev => document.addEventListener(ev, unmuteOnce, { once:true, passive:true }));
 }
 
 document.getElementById('year').textContent = new Date().getFullYear();
