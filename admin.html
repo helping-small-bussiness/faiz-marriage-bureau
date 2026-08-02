@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Registrations | Faiz Marriage Bureau Admin</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700&family=Manrope:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{ --emerald:#0f3d2e; --emerald-deep:#0a2b20; --gold:#c9a15a; --gold-soft:#e6cd9c; --ivory:#faf6ee; --charcoal:#24211d; --charcoal-soft:#5c564c; --white:#fff; }
+*{ box-sizing:border-box; margin:0; padding:0; }
+body{ font-family:'Manrope',sans-serif; background:var(--ivory); color:var(--charcoal); min-height:100vh; }
+h1,h2{ font-family:'Cormorant Garamond',serif; color:var(--emerald); }
+
+#loginScreen{ min-height:100vh; display:flex; align-items:center; justify-content:center; background: linear-gradient(180deg, var(--emerald-deep), var(--emerald)); padding:24px; }
+.login-card{ background: rgba(255,255,255,0.05); border:1px solid rgba(230,205,156,0.25); border-radius:20px; padding:40px 32px; max-width:360px; width:100%; text-align:center; }
+.login-card h1{ color:var(--white); font-size:1.5rem; margin-bottom:6px; }
+.login-card p{ color:rgba(250,246,238,0.7); font-size:0.85rem; margin-bottom:22px; }
+.login-card input{ width:100%; padding:13px 16px; border-radius:10px; border:1px solid rgba(230,205,156,0.3); background:rgba(255,255,255,0.06); color:var(--white); font-family:inherit; font-size:0.95rem; margin-bottom:14px; outline:none; }
+.login-card input:focus{ border-color:var(--gold-soft); }
+.login-card button{ width:100%; padding:14px; border:none; border-radius:50px; cursor:pointer; background: linear-gradient(135deg, var(--gold), var(--gold-soft)); color: var(--emerald-deep); font-weight:700; font-size:0.95rem; }
+.login-error{ color:#f0a5a5; font-size:0.82rem; margin-top:12px; min-height:1em; }
+
+#dashboard{ display:none; }
+.admin-header{ background: var(--emerald-deep); color:var(--white); padding:22px 28px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px; }
+.admin-header h1{ color:var(--white); font-size:1.3rem; }
+.admin-header span{ color:rgba(250,246,238,0.6); font-size:0.8rem; }
+.logout-btn{ background:transparent; border:1px solid rgba(230,205,156,0.4); color:var(--gold-soft); padding:9px 18px; border-radius:50px; cursor:pointer; font-family:inherit; font-size:0.82rem; }
+
+.wrap{ max-width:1000px; margin:0 auto; padding:30px 20px 60px; }
+.filter-row{ display:flex; gap:10px; margin-bottom:22px; flex-wrap:wrap; }
+.filter-row button{ padding:8px 18px; border-radius:50px; border:1px solid var(--gold-soft); background:var(--white); color:var(--charcoal-soft); font-family:inherit; font-size:0.82rem; cursor:pointer; }
+.filter-row button.active{ background:var(--emerald); color:var(--white); border-color:var(--emerald); }
+
+.profile-card{ background:var(--white); border-radius:16px; padding:22px 24px; margin-bottom:14px; box-shadow:0 8px 22px rgba(15,61,46,0.08); border:1px solid rgba(15,61,46,0.06); }
+.profile-top{ display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:12px; margin-bottom:14px; }
+.profile-top h3{ font-size:1.15rem; }
+.profile-tag{ display:inline-block; font-size:0.7rem; padding:3px 10px; border-radius:50px; background:#f0e8d8; color:var(--emerald); font-weight:600; margin-bottom:6px; }
+.profile-meta{ font-size:0.78rem; color:var(--charcoal-soft); }
+.profile-details{ display:grid; grid-template-columns: repeat(auto-fill, minmax(160px,1fr)); gap:10px 20px; font-size:0.86rem; margin-bottom:14px; }
+.profile-details div strong{ display:block; color:var(--emerald); font-size:0.72rem; text-transform:uppercase; letter-spacing:0.04em; margin-bottom:2px; }
+.profile-actions{ display:flex; gap:10px; flex-wrap:wrap; }
+.profile-actions a, .profile-actions button{ padding:9px 16px; border-radius:50px; font-size:0.8rem; text-align:center; border:none; cursor:pointer; font-family:inherit; font-weight:500; }
+.wa-btn{ background:#25D366; color:#fff; }
+.status-btn{ background:#f0e8d8; color:var(--emerald); }
+.status-btn.done{ background:var(--emerald); color:#fff; }
+.empty-state{ text-align:center; padding:60px 20px; color:var(--charcoal-soft); }
+</style>
+</head>
+<body>
+
+<div id="loginScreen">
+  <div class="login-card">
+    <h1>Faiz Marriage Bureau</h1>
+    <p>Registrations — admin access only</p>
+    <input type="password" id="adminKeyInput" placeholder="Enter admin passphrase" autocomplete="off">
+    <button id="loginBtn">Unlock Dashboard</button>
+    <p class="login-error" id="loginError"></p>
+  </div>
+</div>
+
+<div id="dashboard">
+  <div class="admin-header">
+    <div><h1>Registrations</h1><span id="profileCount">Loading…</span></div>
+    <button class="logout-btn" id="logoutBtn">Log Out</button>
+  </div>
+  <div class="wrap">
+    <div class="filter-row">
+      <button class="active" data-filter="all">All</button>
+      <button data-filter="Bride">Brides</button>
+      <button data-filter="Groom">Grooms</button>
+      <button data-filter="contacted">Contacted</button>
+    </div>
+    <div id="profilesList"></div>
+  </div>
+</div>
+
+<script>
+const SUPABASE_URL = 'https://wrvjmfzcxhtvycbavqgz.supabase.co';
+const SUPABASE_ANON_KEY = 'sb_publishable_o8auK7iQmGqaLw3nov20LA_3-4u-YKj';
+
+let adminKey = sessionStorage.getItem('faiz_admin_key') || '';
+let allProfiles = [];
+let currentFilter = 'all';
+
+const loginScreen = document.getElementById('loginScreen');
+const dashboard = document.getElementById('dashboard');
+const loginError = document.getElementById('loginError');
+
+async function fetchProfiles(){
+  const res = await fetch(SUPABASE_URL + '/rest/v1/rpc/get_profiles', {
+    method:'POST',
+    headers:{ 'Content-Type':'application/json', 'apikey':SUPABASE_ANON_KEY, 'Authorization':'Bearer '+SUPABASE_ANON_KEY },
+    body: JSON.stringify({ admin_key: adminKey })
+  });
+  if (!res.ok) throw new Error('unauthorized');
+  return res.json();
+}
+
+async function tryLogin(key){
+  adminKey = key;
+  try{
+    allProfiles = await fetchProfiles();
+    sessionStorage.setItem('faiz_admin_key', adminKey);
+    loginScreen.style.display='none';
+    dashboard.style.display='block';
+    render();
+  }catch(err){
+    loginError.textContent = 'Incorrect passphrase. Please try again.';
+    sessionStorage.removeItem('faiz_admin_key');
+  }
+}
+
+document.getElementById('loginBtn').addEventListener('click', () => {
+  const val = document.getElementById('adminKeyInput').value.trim();
+  if (val) tryLogin(val);
+});
+document.getElementById('adminKeyInput').addEventListener('keydown', e => { if (e.key==='Enter') document.getElementById('loginBtn').click(); });
+document.getElementById('logoutBtn').addEventListener('click', () => { sessionStorage.removeItem('faiz_admin_key'); location.reload(); });
+
+function esc(str){ const d = document.createElement('div'); d.textContent = str||''; return d.innerHTML; }
+function waLink(phone, name){
+  const digits = (phone||'').replace(/\D/g,'');
+  const text = encodeURIComponent(`Assalamu Alaikum ${name}, thank you for registering with Faiz Marriage Bureau. `);
+  return `https://wa.me/${digits}?text=${text}`;
+}
+
+function render(){
+  document.getElementById('profileCount').textContent = `${allProfiles.length} registrations total`;
+  const list = document.getElementById('profilesList');
+  let filtered = allProfiles;
+  if (currentFilter === 'Bride' || currentFilter === 'Groom') filtered = allProfiles.filter(p => p.registering_for === currentFilter);
+  else if (currentFilter === 'contacted') filtered = allProfiles.filter(p => p.status === 'contacted');
+
+  if (filtered.length === 0){ list.innerHTML = '<div class="empty-state">No registrations here yet.</div>'; return; }
+
+  list.innerHTML = filtered.map(p => `
+    <div class="profile-card">
+      <div class="profile-top">
+        <div>
+          <span class="profile-tag">${esc(p.registering_for)}</span>
+          <h3>${esc(p.name)}</h3>
+          <div class="profile-meta">${new Date(p.created_at).toLocaleString('en-IN',{dateStyle:'medium',timeStyle:'short'})}</div>
+        </div>
+      </div>
+      <div class="profile-details">
+        <div><strong>Age</strong>${esc(p.age)||'—'}</div>
+        <div><strong>Height</strong>${esc(p.height)||'—'}</div>
+        <div><strong>Education</strong>${esc(p.education)||'—'}</div>
+        <div><strong>Profession</strong>${esc(p.profession)||'—'}</div>
+        <div><strong>Location</strong>${esc(p.location)||'—'}</div>
+        <div><strong>Marital Status</strong>${esc(p.marital_status)||'—'}</div>
+        <div><strong>Sect</strong>${esc(p.sect)||'—'}</div>
+        <div><strong>Phone</strong>${esc(p.phone)}</div>
+        <div><strong>Guardian</strong>${esc(p.guardian)||'—'}</div>
+        <div><strong>Income</strong>${esc(p.income)||'—'}</div>
+      </div>
+      ${p.expectations ? `<div style="margin-bottom:14px; font-size:0.86rem;"><strong style="display:block; color:var(--emerald); font-size:0.72rem; text-transform:uppercase; margin-bottom:4px;">Expectations</strong>${esc(p.expectations)}</div>` : ''}
+      <div class="profile-actions">
+        <a class="wa-btn" href="${waLink(p.phone, p.name)}" target="_blank" rel="noopener">Message on WhatsApp</a>
+        <button class="status-btn ${p.status==='contacted'?'done':''}" onclick="toggleStatus(${p.id}, '${p.status}')">${p.status==='contacted' ? '✓ Contacted' : 'Mark as Contacted'}</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+async function toggleStatus(id, current){
+  const newStatus = current === 'contacted' ? 'new' : 'contacted';
+  await fetch(SUPABASE_URL + '/rest/v1/rpc/update_profile_status', {
+    method:'POST',
+    headers:{ 'Content-Type':'application/json', 'apikey':SUPABASE_ANON_KEY, 'Authorization':'Bearer '+SUPABASE_ANON_KEY },
+    body: JSON.stringify({ admin_key: adminKey, profile_id: id, new_status: newStatus })
+  });
+  allProfiles = allProfiles.map(p => p.id === id ? {...p, status: newStatus} : p);
+  render();
+}
+
+document.querySelectorAll('.filter-row button').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.filter-row button').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    currentFilter = btn.dataset.filter;
+    render();
+  });
+});
+
+if (adminKey) tryLogin(adminKey);
+</script>
+</body>
+</html>
