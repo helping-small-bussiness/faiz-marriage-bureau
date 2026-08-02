@@ -227,8 +227,9 @@ h1,h2,h3{ font-family: var(--font-display); font-weight:600; color: var(--emeral
 <!-- CHAPTER 1: WHO WE ARE -->
 <section class="chapter chapter-ivory" id="about">
   <div class="container chapter-grid">
-    <div class="chapter-visual reveal">
-      <video src="about-video.mp4" autoplay muted loop playsinline style="width:100%; height:100%; object-fit:cover; border-radius: inherit;"></video>
+    <div class="chapter-visual reveal" style="padding:0;">
+      <video id="aboutVideo" src="about-video.mp4" autoplay muted loop playsinline style="width:100%; height:100%; object-fit:cover; border-radius: inherit;"></video>
+      <button id="unmuteBtn" aria-label="Toggle sound" style="position:absolute; bottom:16px; right:16px; width:44px; height:44px; border-radius:50%; background:rgba(255,255,255,0.15); backdrop-filter:blur(6px); border:1px solid rgba(230,205,156,0.5); color:var(--gold-soft); font-size:1.1rem; cursor:pointer;">🔇</button>
     </div>
     <div class="chapter-copy reveal">
       <span class="eyebrow">Chapter One</span>
@@ -463,6 +464,16 @@ form.addEventListener('submit', async (e) => {
     setTimeout(()=>toast.classList.remove('show'), 3200);
   }
 });
+
+// about video sound toggle
+const aboutVideo = document.getElementById('aboutVideo');
+const unmuteBtn = document.getElementById('unmuteBtn');
+if (aboutVideo && unmuteBtn){
+  unmuteBtn.addEventListener('click', () => {
+    aboutVideo.muted = !aboutVideo.muted;
+    unmuteBtn.textContent = aboutVideo.muted ? '🔇' : '🔊';
+  });
+}
 
 document.getElementById('year').textContent = new Date().getFullYear();
 </script>
